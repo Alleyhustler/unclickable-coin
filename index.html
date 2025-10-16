@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unclickable Coin — You Can't Win What's Already Gone</title>
+    <link href="https://fonts.googleapis.com/css2?family=VT323&family=Space+Grotesk:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'VT323', monospace;
+            background: #0a0a0a;
+            color: #d4d4d4;
+            overflow: hidden;
+            cursor: none;
+            position: relative;
+        }
+
+        #bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('background.png') center/cover no-repeat, 
+                        radial-gradient(ellipse at center, #1a1a1a 0%, #0a0a0a 100%);
+            transition: transform 0.3s ease-out;
+            z-index: 0;
+        }
+
+        #custom-cursor {
+            position: fixed;
+            width: 62px;
+            height: 62px;
+            pointer-events: none;
+            z-index: 10000;
+            transition: transform 0.1s ease;
+            background: url('a.png') center/contain no-repeat;
+        }
+
+        #custom-cursor.fallback {
+            background: none;
+            width: 8px;
+            height: 8px;
+            border: 2px solid #3ffffa;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #3ffffa;
+        }
+
+        .container {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        #logo {
+            width: 220px;
+            height: 220px;
+            margin-bottom: 20px;
+            background: url('v.png') center/contain no-repeat;
+            animation: pulse 3s ease-in-out infinite;
+            filter: drop-shadow(0 0 20px rgba(255, 101, 63, 0.3));
+        }
+
+        #logo.fallback {
+            background: radial-gradient(circle, #ff453f 0%, transparent 70%);
+            border-radius: 50%;
+            opacity: 0.6;
+        }
+
+        @keyframes pulse {
+            0%, 100% { filter: drop-shadow(0 0 20px rgba(255, 63, 63, 0.3)); }
+            50% { filter: drop-shadow(0 0 35px rgba(255, 124, 63, 0.6)); }
+        }
+
+        h1 {
+            font-size: clamp(2.5rem, 8vw, 5rem);
+            color: #fff;
+            text-shadow: 0 0 20px rgba(63, 255, 250, 0.4);
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+            animation: titleGlow 4s ease-in-out infinite;
+        }
+
+        @keyframes titleGlow {
+            0%, 100% { text-shadow: 0 0 20px rgba(255, 226, 63, 0.4); }
+            50% { text-shadow: 0 0 30px rgba(255, 149, 63, 0.7); }
+        }
+
+        .subtitle {
+            font-size: clamp(1rem, 3vw, 1.5rem);
+            color: #888;
+            margin-bottom: 20px;
+            font-family: 'Space Grotesk', monospace;
+        }
+
+        .twitter-link {
+            display: inline-block;
+            padding: 10px 25px;
+            background: rgb(0 10 9 / 10%);
+            border: 2px solid #381606;
+            color: #ffb23f;
+            text-decoration: none;
+            font-size: 1.2rem;
+            margin-bottom: 40px;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 10px rgba(46, 3, 3, 0.2);
+        }
+
+        .twitter-link:hover {
+            background: rgba(31, 1, 1, 0.2);
+            box-shadow: 0 0 20px rgba(255, 69, 63, 0.4);
+            transform: translateY(-2px);
+        }
+
+        #game-arena {
+            position: relative;
+            width: clamp(300px, 80vw, 600px);
+            height: clamp(250px, 50vh, 400px);
+            background: #1a1a1a;
+            border: 3px solid #333;
+            box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.8), 
+                        0 0 20px rgba(63, 255, 250, 0.1);
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        #coin {
+            position: absolute;
+            width: 90px;
+            height: 90px;
+            background: url('v.png') center/contain no-repeat;
+            transition: opacity 0.15s;
+            /* Add a subtle glow effect to the coin */
+            filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6));
+        }
+
+        .coin-trail {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: radial-gradient(circle, rgba(255, 215, 0, 0.3) 0%, transparent 70%);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: trailFade 0.5s ease-out forwards;
+        }
+
+        @keyframes trailFade {
+            to {
+                opacity: 0;
+                transform: scale(1.2);
+            }
+        }
+
+        #message {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #ff6b6b;
+            font-size: 1.5rem;
+            text-shadow: 0 0 10px rgba(255, 107, 107, 0.8);
+            opacity: 0;
+            transition: opacity 0.3s;
+            white-space: nowrap;
+            pointer-events: none;
+        }
+
+        #lore-text {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #666;
+            font-size: 1.2rem;
+            opacity: 0;
+            transition: opacity 1s;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        footer {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: #444;
+            font-size: 0.9rem;
+            opacity: 0.5;
+            font-family: 'Space Grotesk', monospace;
+            text-align: center;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2.5rem; }
+            .subtitle { font-size: 1rem; }
+            #game-arena { height: 300px; }
+        }
+    </style>
+</head>
+<body>
+    <div id="bg"></div>
+    <div id="custom-cursor" class="fallback"></div>
+    
+    <div class="container">
+        <div id="logo" class="fallback"></div>
+        <h1>Unclickable Coin</h1>
+        <p class="subtitle">You can't win what's already gone. $UNCOIN</p>
+        <a href="https://x.com/unclickablecoin" class="twitter-link" target="_blank">Follow on 𝕏</a>
+        
+        <div id="game-arena">
+            <div id="coin"></div>
+            <div id="message">You missed. Everyone does.</div>
+            <div id="lore-text">The chain always moves faster.</div>
+        </div>
+    </div>
+
+    <footer>© 2025 Unclickable Coin — Always Moving.</footer>
+
+    <script>
+        const cursor = document.getElementById('custom-cursor');
+        const bg = document.getElementById('bg');
+        const coin = document.getElementById('coin');
+        const arena = document.getElementById('game-arena');
+        const message = document.getElementById('message');
+        const loreText = document.getElementById('lore-text');
+
+        let mouseX = 0, mouseY = 0;
+        let coinX = 250, coinY = 150;
+        let velocityX = 2, velocityY = 1.5;
+        let interactionStart = Date.now();
+        let trails = [];
+
+        // Custom cursor follow
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+            cursor.style.left = mouseX + 'px';
+            cursor.style.top = mouseY + 'px';
+            
+            // Parallax background
+            const moveX = (e.clientX / window.innerWidth - 0.5) * 20;
+            const moveY = (e.clientY / window.innerHeight - 0.5) * 20;
+            bg.style.transform = `translate(${moveX}px, ${moveY}px)`;
+        });
+
+        // Coin physics
+        function updateCoin() {
+            const rect = arena.getBoundingClientRect();
+            const arenaWidth = arena.clientWidth;
+            const arenaHeight = arena.clientHeight;
+            
+            // Get mouse position relative to arena
+            const mouseInArenaX = mouseX - rect.left;
+            const mouseInArenaY = mouseY - rect.top;
+            
+            // Calculate distance to mouse
+            const dx = mouseInArenaX - coinX;
+            const dy = mouseInArenaY - coinY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // Troll behavior: flee from cursor when close
+            if (distance < 100 && distance > 0) {
+                const fleeForce = 0.3;
+                velocityX -= (dx / distance) * fleeForce;
+                velocityY -= (dy / distance) * fleeForce;
+            }
+            
+            // Random direction changes
+            if (Math.random() < 0.02) {
+                velocityX += (Math.random() - 0.5) * 2;
+                velocityY += (Math.random() - 0.5) * 2;
+            }
+            
+            // Random pauses
+            if (Math.random() < 0.005) {
+                velocityX *= 0.1;
+                velocityY *= 0.1;
+                setTimeout(() => {
+                    velocityX = (Math.random() - 0.5) * 4;
+                    velocityY = (Math.random() - 0.5) * 4;
+                }, Math.random() * 500 + 200);
+            }
+            
+            // Speed variance
+            const speed = Math.sqrt(velocityX * velocityX + velocityY * velocityY);
+            const maxSpeed = 4;
+            if (speed > maxSpeed) {
+                velocityX = (velocityX / speed) * maxSpeed;
+                velocityY = (velocityY / speed) * maxSpeed;
+            }
+            
+            // Update position
+            coinX += velocityX;
+            coinY += velocityY;
+            
+            // Bounce off walls
+            if (coinX <= 20 || coinX >= arenaWidth - 20) {
+                velocityX *= -1;
+                coinX = Math.max(20, Math.min(arenaWidth - 20, coinX));
+            }
+            if (coinY <= 20 || coinY >= arenaHeight - 20) {
+                velocityY *= -1;
+                coinY = Math.max(20, Math.min(arenaHeight - 20, coinY));
+            }
+            
+            // Random flicker
+            if (Math.random() < 0.01) {
+                coin.style.opacity = '0';
+                setTimeout(() => { coin.style.opacity = '1'; }, 100);
+            }
+            
+            // Create trail effect
+            if (Math.random() < 0.3) {
+                createTrail();
+            }
+            
+            coin.style.left = coinX + 'px';
+            coin.style.top = coinY + 'px';
+            
+            // Show lore text after 35 seconds
+            if (Date.now() - interactionStart > 35000) {
+                loreText.style.opacity = '0.8';
+            }
+            
+            requestAnimationFrame(updateCoin);
+        }
+
+        function createTrail() {
+            const trail = document.createElement('div');
+            trail.className = 'coin-trail';
+            trail.style.left = coinX + 'px';
+            trail.style.top = coinY + 'px';
+            arena.appendChild(trail);
+            
+            setTimeout(() => trail.remove(), 500);
+        }
+
+        // Click interaction
+        arena.addEventListener('click', () => {
+            // Show miss message
+            message.style.opacity = '1';
+            setTimeout(() => { message.style.opacity = '0'; }, 1500);
+            
+            // Play sound (silent fallback)
+            const audio = new Audio();
+            audio.volume = 0.3;
+            
+            // Coin dash away
+            const angle = Math.random() * Math.PI * 2;
+            velocityX = Math.cos(angle) * 6;
+            velocityY = Math.sin(angle) * 6;
+        });
+
+        // Start animation
+        updateCoin();
+
+        // Check for custom images
+        const logo = document.getElementById('logo');
+        const logoImg = new Image();
+        logoImg.src = 'v.png';
+        logoImg.onload = () => logo.classList.remove('fallback');
+        
+        const cursorImg = new Image();
+        cursorImg.src = 'a.png';
+        cursorImg.onload = () => cursor.classList.remove('fallback');
+        
+        // Check for coin image
+        const coinImg = new Image();
+        coinImg.src = 'v.png';
+        coinImg.onload = () => {
+            // If coin image loads successfully, we don't need to do anything
+            // The CSS already sets the background image
+        };
+        coinImg.onerror = () => {
+            // If coin image fails to load, use a fallback CSS coin
+            coin.style.background = 'radial-gradient(circle, #ffd700 0%, #ffaa00 100%)';
+            coin.style.borderRadius = '50%';
+            coin.style.boxShadow = '0 0 15px rgba(255, 215, 0, 0.6)';
+            coin.style.filter = 'none';
+        };
+    </script>
+</body>
+</html>
